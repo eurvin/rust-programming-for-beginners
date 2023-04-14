@@ -12,4 +12,22 @@
 // * Use a match expression to determine which message
 //   to print
 
-fn main() {}
+fn print_message(is_big_number: bool) {
+    match is_big_number {
+        true => println!("its big"),
+        false => println!("its small"),
+    };
+}
+
+fn main() {
+    let number_size = 100;
+    let is_big_number = number_size > 100;
+
+    // let is_big_number = if number_size > 100 {
+    //     true
+    // } else {
+    //     false
+    // };
+
+    print_message(is_big_number)
+}

@@ -12,4 +12,7 @@
 //   to uppercase and lowercase
 //   * Try searching for: to_uppercase, to_lowercase
 
-fn main() {}
+fn main() {
+    println!("{:?}", "RaNdOm StrING SliCE".to_lowercase());
+    println!("{:?}", String::from("RaNdOm StrING").to_uppercase());
+}

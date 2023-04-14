@@ -10,4 +10,29 @@
 // * Use a match expression to determine which color
 //   name to print
 
-fn main() {}
+// * Use an enum with color names as variants
+
+enum Color {
+    White,
+    Black,
+    Yellow,
+    Red,
+    Blue
+}
+
+fn print_color(color: Color) {
+    // * Use a match expression to determine which color
+    //   name to print
+    match color {
+        Color::White => println!("White"),
+        Color::Black => println!("Black"),
+        Color::Yellow => println!("Yellow"),
+        Color::Red => println!("Red"),
+        Color::Blue => println!("Blue"),
+    }
+}
+
+fn main() {
+    let color = Color::Red;
+    print_color(color)
+}
