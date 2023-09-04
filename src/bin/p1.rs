@@ -18,6 +18,7 @@
 // * Create your program starting at level 1. Once finished, advance to the
 //   next level.
 
+use std::collections::HashMap;
 use std::io;
 
 struct Bill {
@@ -26,19 +27,23 @@ struct Bill {
 }
 
 struct Bills {
-    inner: Vec<Bill>,
+    inner: HashMap<String, Bill>,
 }
 
 impl Bills {
     fn new() -> Self {
-        Self { inner: vec![] }
+        Self {
+            inner: HashMap::new(),
+        }
     }
 
     fn add(&mut self) -> () {
         let new_bill = add_bill();
-        self.inner.push(new_bill);
+        let id = new_bill.name.to_owned();
+        let name = new_bill.name.to_owned();
+        self.inner.insert(id, new_bill);
         println!("Your new bill has successfully been added!🎉");
-        match self.inner.last() {
+        match self.inner.get(&name) {
             None => println!("Something went wrong. No bills added!"),
             Some(bill) => println!("Bill name: {} and amount: {}", bill.name, bill.amount),
         }
@@ -49,8 +54,20 @@ impl Bills {
             true => println!("No bills available"),
             false => {
                 for bill in &self.inner {
-                    println!("name: {} amount: {}", bill.name, bill.amount)
+                    println!("name: {} amount: {}", bill.1.name, bill.1.amount)
                 }
+            }
+        }
+    }
+
+    fn delete(&mut self) -> () {
+        match self.inner.is_empty() {
+            true => println!("No bills to delete"),
+            false => {
+                self.view_all();
+                let id = delete_bill();
+                self.inner.remove(&id);
+                println!("Bill {} deleted", id)
             }
         }
     }
@@ -59,6 +76,7 @@ impl Bills {
 enum MenuOption {
     Add,
     View,
+    Delete,
     Invalid,
     Exit,
 }
@@ -77,6 +95,7 @@ fn display_menu() {
     println!("Please select your option:");
     println!("1 - Add a new bill");
     println!("2 - View bills");
+    println!("3 - Remove bills");
     println!("0 - Exit menu");
 }
 
@@ -85,6 +104,7 @@ fn get_menu_choice() -> MenuOption {
     match input.trim() {
         "1" => MenuOption::Add,
         "2" => MenuOption::View,
+        "3" => MenuOption::Delete,
         "0" => MenuOption::Exit,
         _ => MenuOption::Invalid,
     }
@@ -99,6 +119,11 @@ fn add_bill() -> Bill {
     Bill { name, amount }
 }
 
+fn delete_bill() -> String {
+    println!("Please select a bill (name)");
+    get_input()
+}
+
 fn main() {
     let mut bills = Bills::new();
     loop {
@@ -106,6 +131,7 @@ fn main() {
         match get_menu_choice() {
             MenuOption::Add => bills.add(),
             MenuOption::View => bills.view_all(),
+            MenuOption::Delete => bills.delete(),
             MenuOption::Invalid => println!("Please choose a valid menu option"),
             MenuOption::Exit => break,
         };
