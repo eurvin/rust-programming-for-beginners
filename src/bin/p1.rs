@@ -18,6 +18,7 @@
 // * Create your program starting at level 1. Once finished, advance to the
 //   next level.
 
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::io;
 
@@ -27,58 +28,47 @@ struct Bill {
 }
 
 struct Bills {
-    inner: HashMap<String, Bill>,
+    list: HashMap<String, Bill>,
 }
 
 impl Bills {
     fn new() -> Self {
         Self {
-            inner: HashMap::new(),
+            list: HashMap::new(),
         }
     }
 
-    fn add(&mut self) -> () {
-        let new_bill = add_bill();
-        let id = new_bill.name.to_owned();
-        let name = new_bill.name.to_owned();
-        self.inner.insert(id, new_bill);
-        println!("Your new bill has successfully been added!🎉");
-        match self.inner.get(&name) {
-            None => println!("Something went wrong. No bills added!"),
-            Some(bill) => println!("Bill name: {} and amount: {}", bill.name, bill.amount),
-        }
-    }
-
-    fn view_all(&self) {
-        match self.inner.is_empty() {
-            true => println!("No bills available"),
-            false => {
-                for bill in &self.inner {
-                    println!("name: {} amount: {}", bill.1.name, bill.1.amount)
-                }
+    fn add(&mut self, bill: Bill) -> Result<String, ()> {
+        match self.list.entry(bill.name.to_owned()) {
+            Entry::Occupied(..) => Err(()),
+            Entry::Vacant(entry) => {
+                let name = bill.name.to_owned();
+                entry.insert(bill);
+                Ok(name)
             }
         }
     }
 
-    fn delete(&mut self) -> () {
-        match self.inner.is_empty() {
-            true => println!("No bills to delete"),
-            false => {
-                self.view_all();
-                let id = delete_bill();
-                self.inner.remove(&id);
-                println!("Bill {} deleted", id)
-            }
-        }
+    fn edit(&mut self, bill: Bill) {
+        self.list.entry(bill.name.to_owned()).or_insert(bill);
     }
 }
 
 enum MenuOption {
     Add,
     View,
+    ViewAll,
+    Edit,
     Delete,
     Invalid,
     Exit,
+}
+
+#[derive(Debug)]
+enum BillsError {
+    Empty,
+    AlreadyExists,
+    Invalid,
 }
 
 // std::io operations
@@ -90,12 +80,23 @@ fn get_input() -> String {
     buffer
 }
 
+// Errors
+fn print_errors(error: Errors) {
+    match error {
+        BillsError::Empty => println!("Something went wrong. No bills found!"),
+        BillsError::AlreadyExists => println!("A bill with this name already exists!"),
+        BillsError::Invalid => println!("Please choose a valid menu option"),
+    }
+}
+
 // menu operations
 fn display_menu() {
     println!("Please select your option:");
     println!("1 - Add a new bill");
-    println!("2 - View bills");
-    println!("3 - Remove bills");
+    println!("2 - View bill");
+    println!("3 - View all bills");
+    println!("4 - Edit bills");
+    println!("5 - Delete bills");
     println!("0 - Exit menu");
 }
 
@@ -104,24 +105,92 @@ fn get_menu_choice() -> MenuOption {
     match input.trim() {
         "1" => MenuOption::Add,
         "2" => MenuOption::View,
-        "3" => MenuOption::Delete,
+        "3" => MenuOption::ViewAll,
+        "4" => MenuOption::Edit,
+        "5" => MenuOption::Delete,
         "0" => MenuOption::Exit,
         _ => MenuOption::Invalid,
     }
 }
 
-fn add_bill() -> Bill {
-    println!("Add a new bill!");
-    println!("Please add name:");
-    let name = get_input();
-    println!("Please add an amount:");
-    let amount = get_input().trim().parse::<i32>().unwrap();
-    Bill { name, amount }
+// bill operations
+fn print_bill(bills: &Bills, name: &String) {
+    match bills.list.get(&name) {
+        Some(bill) => println!("Bill name: {} and amount: {}", bill.name, bill.amount),
+        None => print_errors(BillsError::Empty),
+    }
 }
 
-fn delete_bill() -> String {
-    println!("Please select a bill (name)");
-    get_input()
+fn add_bill(bills: &mut Bills) {
+    println!("Add a new bill.\n");
+    println!("Please add name:");
+    let name = get_input();
+    match bills.list.contains_key(&name) {
+        true => print_errors(BillsError::AlreadyExists),
+        false => {
+            println!("Please add an amount:");
+            let amount = get_input().trim().parse::<i32>().unwrap();
+            let new_bill = Bill { name, amount };
+            match bills.add(new_bill) {
+                Err(..) => print_errors(BillsError::AlreadyExists),
+                Ok(name) => {
+                    println!("Your new bill has successfully been added!🎉\n");
+                    println!("You have added the following new bill: \n");
+                    print_bill(&bills, &name)
+                }
+            }
+        }
+    }
+}
+
+fn view_bill(bills: &Bills) {
+    match bills.list.is_empty() {
+        true => print_errors(BillsError::Empty),
+        false => {
+            println!("Please select a bill (name)");
+            let name = get_input();
+            print_bill(&bills, &name)
+        }
+    }
+}
+
+fn view_all_bills(bills: &Bills) {
+    match bills.list.is_empty() {
+        true => print_errors(BillsError::Empty),
+        false => {
+            println!("We found the following bills:");
+            for (_, bill) in bills.list.iter() {
+                println!("name: {} amount: {}", bill.name, bill.amount)
+            }
+        }
+    }
+}
+
+fn edit_bill(bills: &mut Bills) {
+    match bills.list.is_empty() {
+        true => print_errors(BillsError::Empty),
+        false => {
+            println!("Please select a bill (name):");
+            view_all_bills(&bills);
+            let name = get_input();
+            println!("Please add a new amount:");
+            let amount = get_input().trim().parse::<i32>().unwrap();
+            bills.edit(Bill { name, amount })
+        }
+    }
+}
+
+fn delete_bill(bills: &mut Bills) {
+    match bills.list.is_empty() {
+        true => print_errors(BillsError::Empty),
+        false => {
+            println!("Please select a bill (name):");
+            view_all_bills(&bills);
+            let name = get_input();
+            bills.list.remove(name.as_str());
+            println!("bill: {} deleted:", name);
+        }
+    }
 }
 
 fn main() {
@@ -129,11 +198,13 @@ fn main() {
     loop {
         display_menu();
         match get_menu_choice() {
-            MenuOption::Add => bills.add(),
-            MenuOption::View => bills.view_all(),
-            MenuOption::Delete => bills.delete(),
-            MenuOption::Invalid => println!("Please choose a valid menu option"),
+            MenuOption::Add => add_bill(&mut bills),
+            MenuOption::View => view_bill(&bills),
+            MenuOption::ViewAll => view_all_bills(&bills),
+            MenuOption::Edit => edit_bill(&mut bills),
+            MenuOption::Delete => delete_bill(&mut bills),
             MenuOption::Exit => break,
+            MenuOption::Invalid => print_errors(BillsError::Invalid),
         };
     }
 }
