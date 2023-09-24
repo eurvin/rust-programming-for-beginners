@@ -32,3 +32,29 @@ fn concat(first: &str, second: &str) -> String {
 }
 
 fn main() {}
+
+#[cfg(test)]
+pub mod test {
+    use crate::*;
+
+    #[test]
+    fn test_clamp_lower() {
+        let result = clamp(1, 2, 3);
+        let expected = 2;
+        assert_eq!(result, expected, "result is not below lower: {}", result)
+    }
+
+    #[test]
+    fn test_clamp_upper() {
+        let result = clamp(4, 2, 3);
+        let expected = 3;
+        assert_eq!(result, expected, "result is not above upper: {}", result)
+    }
+
+    #[test]
+    fn test_clamp_in_between() {
+        let result = clamp(2, 1, 3);
+        let expected = 2;
+        assert_eq!(result, expected, "result is not in between: {}", result)
+    }
+}
